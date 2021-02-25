@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  xmlns:camel="http://camel.apache.org/schema/spring"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+        https://www.springframework.org/schema/beans/spring-beans.xsd 
+        http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+        
+  <!-- bean id="jmsConnectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
+    <property name="brokerURL" value="tcp://localhost:61616" />    
+  </bean>
+  
+  <bean id="pooledConnectionFactory" class="org.apache.activemq.pool.PooledConnectionFactory">
+    <property name="connectionFactory" ref="jmsConnectionFactory" />
+  </bean>
+  
+  <bean id="jmsConfig" class="org.apache.camel.component.jms.JmsConfiguration">
+    <property name="connectionFactory" ref="pooledConnectionFactory"/>
+    <property name="transacted" value="false"/>
+    <property name="concurrentConsumers" value="1"/>
+  </bean>
+  
+  <bean id="activemqjms" class="org.apache.activemq.camel.component.ActiveMQComponent">
+    <property name="configuration" ref="jmsConfig"/>
+  </bean -->  
+
+  <bean id="amqpConnectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">  
+    <property name="brokerURL" value="amqp://localhost:5672" />
+  </bean>  
+  
+  <bean id="amqpPooledConnectionFactory" class="org.apache.activemq.pool.PooledConnectionFactory" init-method="start" destroy-method="stop">
+    <property name="connectionFactory" ref="amqpConnectionFactory" />
+  </bean>  
+  
+  <bean id="amqpConfig" class="org.apache.camel.component.jms.JmsConfiguration">
+    <property name="connectionFactory" ref="amqpPooledConnectionFactory"/>
+    <property name="transacted" value="false"/>
+    <property name="concurrentConsumers" value="10"/>
+  </bean>   
+  
+  <bean id="activemqamqp" class="org.apache.camel.component.amqp.AMQPComponent">
+    <property name="configuration" ref="amqpConfig"/>
+    
+  </bean>  
+  
+	<camel:camelContext id="camel"  xmlns="http://camel.apache.org/schema/spring">
+		<!-- camel:endpoint id="activemqlocal" uri="activemqjms:queue:test?deliveryMode=2"/ -->
+		<camel:endpoint id="amqpLocal" uri="amqp:queue:test?testConnectionOnStartup=true&amp;autoStartup=true" />
+		<camel:route>
+			<camel:from ref="amqpLocal"/>
+			<camel:to uri="file:///tmp/?fileName=${date:now:yyyyMMddHHmmssSS}.txt" />
+		</camel:route>
+	</camel:camelContext>  
+</beans>
